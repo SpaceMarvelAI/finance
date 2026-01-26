@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+.env.*
+.env
+.env.*
+# OS files
+.DS_Store
+
+# Logs & outputs
+logs/
+output/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Database / temp
+*.sqlite3
+*.db
+
