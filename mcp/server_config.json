@@ -1,0 +1,213 @@
+{
+  "server": {
+    "name": "financial-automation-mcp",
+    "version": "1.0.0",
+    "description": "MCP server for Financial Automation System with LangGraph integration"
+  },
+  "tools": {
+    "enabled": true,
+    "categories": [
+      {
+        "name": "report_generation",
+        "description": "Report generation and management tools",
+        "tools": [
+          {
+            "name": "get_available_templates",
+            "description": "Get list of available report templates with their capabilities",
+            "function": "mcp.tools.report_generation_tools.get_available_templates",
+            "parameters": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          },
+          {
+            "name": "get_template_info",
+            "description": "Get detailed information about a specific report template",
+            "function": "mcp.tools.report_generation_tools.get_template_info",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "template_type": {
+                  "type": "string",
+                  "description": "Type of template (e.g., 'ap_aging', 'ap_register', 'ar_aging', 'ar_register')"
+                }
+              },
+              "required": ["template_type"]
+            }
+          },
+          {
+            "name": "generate_report",
+            "description": "Generate a report using the specified template and data",
+            "function": "mcp.tools.report_generation_tools.generate_report",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "template_type": {
+                  "type": "string",
+                  "description": "Type of report template to use"
+                },
+                "report_data": {
+                  "type": "object",
+                  "description": "Data to use for report generation"
+                },
+                "company_id": {
+                  "type": "string",
+                  "description": "Company ID for branding and configuration"
+                },
+                "params": {
+                  "type": "object",
+                  "description": "Additional parameters for report generation",
+                  "properties": {
+                    "as_of_date": {
+                      "type": "string",
+                      "description": "As-of date for the report"
+                    }
+                  },
+                  "required": []
+                }
+              },
+              "required": ["template_type", "report_data", "company_id"]
+            }
+          },
+          {
+            "name": "validate_template_config",
+            "description": "Validate template configuration before report generation",
+            "function": "mcp.tools.report_generation_tools.validate_template_config",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "template_type": {
+                  "type": "string",
+                  "description": "Type of template to validate"
+                },
+                "config": {
+                  "type": "object",
+                  "description": "Configuration to validate"
+                }
+              },
+              "required": ["template_type", "config"]
+            }
+          },
+          {
+            "name": "list_generated_reports",
+            "description": "List recently generated reports with metadata",
+            "function": "mcp.tools.report_generation_tools.list_generated_reports",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "company_id": {
+                  "type": "string",
+                  "description": "Filter reports by company ID (optional)"
+                },
+                "limit": {
+                  "type": "integer",
+                  "description": "Maximum number of reports to return (default: 50)"
+                }
+              },
+              "required": []
+            }
+          },
+          {
+            "name": "get_report_metadata",
+            "description": "Get metadata for a specific report file",
+            "function": "mcp.tools.report_generation_tools.get_report_metadata",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string",
+                  "description": "Name of the report file"
+                }
+              },
+              "required": ["filename"]
+            }
+          },
+          {
+            "name": "delete_report",
+            "description": "Delete a generated report file",
+            "function": "mcp.tools.report_generation_tools.delete_report",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string",
+                  "description": "Name of the report file to delete"
+                }
+              },
+              "required": ["filename"]
+            }
+          },
+          {
+            "name": "get_system_status",
+            "description": "Get overall system status and statistics",
+            "function": "mcp.tools.report_generation_tools.get_system_status",
+            "parameters": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "resources": {
+    "enabled": true,
+    "categories": [
+      {
+        "name": "reports",
+        "description": "Generated report files",
+        "resources": [
+          {
+            "name": "reports_directory",
+            "description": "Directory containing generated report files",
+            "uri": "file://./output/reports/",
+            "type": "directory"
+          }
+        ]
+      },
+      {
+        "name": "documentation",
+        "description": "System documentation and guides",
+        "resources": [
+          {
+            "name": "api_documentation",
+            "description": "API documentation and usage guides",
+            "uri": "file://./docs/",
+            "type": "directory"
+          },
+          {
+            "name": "phase_completion_summary",
+            "description": "Phase 3 completion summary and implementation details",
+            "uri": "file://./PHASE_3_COMPLETION_SUMMARY.md",
+            "type": "file"
+          }
+        ]
+      }
+    ]
+  },
+  "security": {
+    "authentication": {
+      "required": false,
+      "type": "none"
+    },
+    "authorization": {
+      "enabled": false
+    },
+    "rate_limiting": {
+      "enabled": false
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file": "./logs/mcp_server.log"
+  },
+  "performance": {
+    "timeout": 30000,
+    "max_concurrent_requests": 10,
+    "cache_enabled": true,
+    "cache_ttl": 300
+  }
+}

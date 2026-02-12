@@ -18,6 +18,97 @@ logger = get_logger(__name__)
 
 
 class DatabaseManager:
+    def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        """Fetch a user by email from the users table."""
+        cursor = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def insert_user(self, user_data: Dict[str, Any]) -> str:
+        """Insert a new user into the users table."""
+        cursor = self.conn.cursor()
+        user_id = user_data.get('id') or str(uuid.uuid4())
+        cursor.execute("""
+            INSERT INTO users (id, email, password_hash, full_name, company_id, is_active, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            user_id,
+            user_data['email'],
+            user_data['password_hash'],
+            user_data.get('full_name'),
+            user_data['company_id'],
+            user_data.get('is_active', True),
+            user_data.get('created_at', datetime.now())
+        ))
+        self.conn.commit()
+        return user_id
+
+    def get_company_by_id(self, company_id: str) -> Optional[Dict[str, Any]]:
+        """Fetch a company by ID."""
+        cursor = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("SELECT * FROM companies WHERE id = %s", (company_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def get_company_by_name_or_alias(self, name_or_alias: str) -> Optional[Dict[str, Any]]:
+        """Fetch a company by name or any alias."""
+        cursor = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+            SELECT * FROM companies WHERE name = %s OR %s = ANY(company_aliases)
+        """, (name_or_alias, name_or_alias))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def insert_company(self, company_data: Dict[str, Any]) -> str:
+        """Insert a new company into the companies table."""
+        cursor = self.conn.cursor()
+        company_id = company_data.get('id') or str(uuid.uuid4())
+        aliases = company_data.get('company_aliases', [])
+        cursor.execute("""
+            INSERT INTO companies (
+                id, name, tax_id, email, phone, address_line1, address_line2, city, state, country, postal_code,
+                primary_color, secondary_color, accent_color, currency, dso_target, sla_days, company_aliases, created_at, updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            company_id,
+            company_data['name'],
+            company_data.get('tax_id'),
+            company_data.get('email'),
+            company_data.get('phone'),
+            company_data.get('address_line1'),
+            company_data.get('address_line2'),
+            company_data.get('city'),
+            company_data.get('state'),
+            company_data.get('country'),
+            company_data.get('postal_code'),
+            company_data.get('primary_color', '#1976D2'),
+            company_data.get('secondary_color', '#424242'),
+            company_data.get('accent_color'),
+            company_data.get('currency', 'INR'),
+            company_data.get('dso_target'),
+            company_data.get('sla_days'),
+            aliases,
+            company_data.get('created_at', datetime.now()),
+            company_data.get('updated_at', datetime.now())
+        ))
+        self.conn.commit()
+        return company_id
+
+    def update_company(self, company_id: str, update_data: Dict[str, Any]) -> bool:
+        """Update company fields by company_id."""
+        cursor = self.conn.cursor()
+        set_clauses = []
+        values = []
+        for k, v in update_data.items():
+            set_clauses.append(f"{k} = %s")
+            values.append(v)
+        set_clause = ", ".join(set_clauses)
+        values.extend([datetime.now(), company_id])
+        cursor.execute(f"UPDATE companies SET {set_clause}, updated_at = %s WHERE id = %s", values)
+        self.conn.commit()
+        return cursor.rowcount > 0
+
     """
     Manages persistent storage of financial documents in PostgreSQL
     
@@ -25,7 +116,7 @@ class DatabaseManager:
     - documents: All uploaded documents with parsed data
     - metadata: System metadata
     """
-    
+
     def __init__(self, 
                  host: str = None,
                  port: int = None,

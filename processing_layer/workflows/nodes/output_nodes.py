@@ -3,7 +3,7 @@ Final Fixed ExcelGeneratorNode with Report Metadata
 """
 
 from processing_layer.workflows.nodes.base_node import BaseNode, register_node
-from processing_layer.report_generation.branded_excel_generator import BrandedExcelGenerator
+# BrandedExcelGenerator has been removed - functionality moved to individual report nodes
 from typing import Dict, Any
 from datetime import datetime, date
 
@@ -33,7 +33,7 @@ class ExcelGeneratorNode(BaseNode):
     
     def run(self, input_data, params=None):
         """
-        Generate Excel report
+        Generate Excel report using appropriate report node
         
         Args:
             input_data: Report data (can be dict with invoices/groups/summary or list)
@@ -41,37 +41,42 @@ class ExcelGeneratorNode(BaseNode):
         """
         params = params or {}
         user_id = params.get('user_id', 'spacemarvel')
-        
-        # Initialize generator
-        generator = BrandedExcelGenerator(user_id)
+        report_type = params.get('report_type', 'ap_aging')
         
         # Prepare report data with metadata
         report_data = self._prepare_report_data(input_data, params)
         
-        # Determine report type and call appropriate method
-        report_type = params.get('report_type', 'ap_aging')
-        
-        # Check for specific report types first (most specific to least specific)
+        # Import and use the appropriate report node
         if report_type == 'ar_collection':
-            file_path = generator.generate_ar_collection(report_data)
+            from processing_layer.workflows.nodes.output_nodes.report_templates.ar_collection_node_fixed import ARCollectionReportNode
+            node = ARCollectionReportNode()
         elif report_type == 'ar_register' or report_type == 'ar_invoice_register':
-            file_path = generator.generate_ar_invoice_register(report_data)
+            from processing_layer.workflows.nodes.output_nodes.report_templates.ar_register_node_fixed import ARRegisterReportNode
+            node = ARRegisterReportNode()
         elif report_type == 'ap_register' or report_type == 'ap_invoice_register':
-            file_path = generator.generate_ap_invoice_register(report_data)
+            from processing_layer.workflows.nodes.output_nodes.report_templates.ap_register_node_fixed import APRegisterReportNode
+            node = APRegisterReportNode()
         elif report_type == 'ar_aging':
-            file_path = generator.generate_ar_aging(report_data)
+            from processing_layer.workflows.nodes.output_nodes.report_templates.ar_aging_node_fixed import ARAgingReportNode
+            node = ARAgingReportNode()
         elif report_type == 'ap_aging' or 'aging' in report_type.lower():
-            file_path = generator.generate_ap_aging(report_data)
+            from processing_layer.workflows.nodes.output_nodes.report_templates.ap_aging_node_fixed import APAgingReportNode
+            node = APAgingReportNode()
         elif report_type == 'ap_overdue' or 'overdue' in report_type.lower():
-            sla_days = params.get('sla_days', 30)
-            file_path = generator.generate_ap_overdue(report_data, sla_days=sla_days)
+            from processing_layer.workflows.nodes.output_nodes.report_templates.ap_overdue_node import APOverdueReportNode
+            node = APOverdueReportNode()
         elif report_type == 'dso':
-            file_path = generator.generate_dso_report(report_data)
+            from processing_layer.workflows.nodes.output_nodes.report_templates.dso_node import DSOReportNode
+            node = DSOReportNode()
         else:
             # Default to aging
-            file_path = generator.generate_ap_aging(report_data)
+            from processing_layer.workflows.nodes.output_nodes.report_templates.ap_aging_node_fixed import APAgingReportNode
+            node = APAgingReportNode()
         
-        return file_path
+        # Run the report node
+        result = node.run(report_data, params)
+        
+        return result.get('file_path', '')
     
     def _prepare_report_data(self, input_data, params: Dict) -> Dict[str, Any]:
         """

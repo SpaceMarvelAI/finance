@@ -1,0 +1,51 @@
+{
+  "test_summary": {
+    "total": 8,
+    "passed": 2,
+    "failed": 6,
+    "success_rate": 25.0
+  },
+  "test_results": [
+    {
+      "test": "Basic Query Analysis",
+      "status": "FAIL",
+      "details": "Should detect aging report type"
+    },
+    {
+      "test": "Advanced Query Analysis",
+      "status": "FAIL",
+      "details": "Should be data analysis type"
+    },
+    {
+      "test": "Workflow Generation",
+      "status": "PASS",
+      "details": "Generated 4 nodes, optimization: advanced"
+    },
+    {
+      "test": "Workflow Optimization",
+      "status": "FAIL",
+      "details": "Expecting value: line 1 column 1 (char 0)"
+    },
+    {
+      "test": "Performance Metadata",
+      "status": "PASS",
+      "details": "Exec time: 150 seconds, Memory: 4GB, Parallel nodes: 2"
+    },
+    {
+      "test": "Caching Functionality",
+      "status": "FAIL",
+      "details": "Should return cached analysis"
+    },
+    {
+      "test": "Error Handling",
+      "status": "FAIL",
+      "details": "Should be fallback workflow"
+    },
+    {
+      "test": "Complex Workflow Generation",
+      "status": "FAIL",
+      "details": "Should have multiple nodes for complex query"
+    }
+  ],
+  "timestamp": "2026-01-27T20:02:50.892586"
+}
