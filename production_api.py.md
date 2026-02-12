@@ -47,6 +47,16 @@ Register a new user and company.
     "company_name": "Example Company"
 }
 ```
+curl -X 'POST' \
+  'http://0.0.0.0:8000/api/v1/auth/register' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "email": "abc@spacemarvel.ai",
+  "password": "abc@123",
+  "full_name": "spacemarvel ai",
+  "company_name": "METASPACE MARVEL PRIVATE LIMITED"
+}'
 
 #### POST /api/v1/auth/login
 Authenticate user and get access token.
@@ -70,6 +80,14 @@ Authenticate user and get access token.
     "company_name": "Example Company"
 }
 ```
+curl -X 'POST' \
+  'http://0.0.0.0:8000/api/v1/auth/login' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "email": "abc@spacemarvel.ai",
+  "password": "abc@123"
+}'
 
 ### Company Management Endpoints
 
@@ -107,6 +125,21 @@ Authorization: Bearer <access_token>
     }
 }
 ```
+curl -X PUT "http://0.0.0.0:8000/api/v1/company/setup" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYjQyNjhjNy1jZThhLTQyMGMtYmZmOC0xZWExODUyZjVmMmUiLCJleHAiOjE3NzA5ODkwNTR9.dTvgCKCV0wxIY8L35YtrbwOf7x7Igqt4rXPfy5SttMs" \
+  -d '{
+    "primary_color": "#1976D2",
+    "secondary_color": "#C6EFCE",
+    "accent_color": "#FF5722",
+    "default_currency": "INR",
+    "company_aliases": [
+      "Space Marvel AI",
+      "SpaceMarvel AI",
+      "MetaSpace Marvel AI",
+      "METASPACE MARVEL AI PRIVATE LIMITED"
+    ]
+  }'
 
 #### POST /api/v1/company/logo
 Upload company logo.
@@ -129,6 +162,9 @@ Content-Type: multipart/form-data
     "message": "Logo uploaded successfully"
 }
 ```
+curl -X POST "http://0.0.0.0:8000/api/v1/company/logo" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYjQyNjhjNy1jZThhLTQyMGMtYmZmOC0xZWExODUyZjVmMmUiLCJleHAiOjE3NzA5ODk5NzZ9.PuaSnaPJDmhJ21MqRkS5u9d3OtGXaeh_OV5ZXZI9xkI" \
+  -F "file=@spacemarvel.png"
 
 ### Document Management Endpoints
 
@@ -158,7 +194,10 @@ Content-Type: multipart/form-data
     }
 }
 ```
-
+(base) apple@Apples-MBP FA % curl -X POST "http://0.0.0.0:8000/api/v1/documents/upload" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYjQyNjhjNy1jZThhLTQyMGMtYmZmOC0xZWExODUyZjVmMmUiLCJleHAiOjE3NzA5ODk5NzZ9.PuaSnaPJDmhJ21MqRkS5u9d3OtGXaeh_OV5ZXZI9xkI" \
+  -F "file=@test_data/Invoice-FFDOJMBE-0001.pdf"
+  
 #### GET /api/v1/documents
 List uploaded documents.
 
