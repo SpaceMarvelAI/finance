@@ -47,14 +47,21 @@ class DatabaseManager:
     
     def initialize_database(self):
         """Create database connection (tables already exist in production)"""
-        # Connect to PostgreSQL
-        self.conn = psycopg2.connect(
-            host=self.host,
-            port=self.port,
-            database=self.database,
-            user=self.user,
-            password=self.password
-        )
+        # Check if a full DATABASE_URL exists first
+        db_url = os.getenv("DATABASE_URL")
+        
+        if db_url:
+            # Connect using the single connection string
+            self.conn = psycopg2.connect(db_url)
+        else:
+            # Fall back to individual variables
+            self.conn = psycopg2.connect(
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password
+            )
         
         # Use RealDictCursor for dictionary results
         self.conn.autocommit = False

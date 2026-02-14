@@ -148,6 +148,7 @@ class Workflow(Base):
     report_type = Column(String(100))
     workflow_definition = Column(JSONB, nullable=False)
     execution_result = Column(JSONB)
+    is_pinned = Column(Boolean, default=False)
     created_at = Column(DateTime, nullable=False)
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
@@ -185,6 +186,9 @@ def get_db():
         yield db
     finally:
         db.close()
+
+#  ADDED: Forces SQLAlchemy to create any missing tables/columns automatically
+Base.metadata.create_all(bind=engine)
 
 # ============================================================================
 # INITIALIZE SERVICES
@@ -255,6 +259,11 @@ class UserLogin(BaseModel):
 
 class ChatQuery(BaseModel):
     query: str
+
+# ADDED: Validates data when React sends a Rename or Pin request
+class WorkflowUpdate(BaseModel):
+    name: Optional[str] = None
+    is_pinned: Optional[bool] = None
 
 # ============================================================================
 # FASTAPI APP
@@ -784,6 +793,122 @@ async def list_workflows(
             }
             for wf in workflows
         ]
+    }
+# ============================================================================
+#  NEW WORKFLOW CRUD ENDPOINTS FOR SIDEBAR ACTIONS
+# ============================================================================
+
+@app.get("/api/v1/workflows/{workflow_id}")
+async def get_workflow(
+    workflow_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get details of a specific workflow to load onto the canvas"""
+    workflow = db.query(Workflow).filter(
+        Workflow.id == workflow_id,
+        Workflow.company_id == current_user.company_id
+    ).first()
+
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    return {
+        "status": "success",
+        "workflow": {
+            "id": workflow.id,
+            "name": workflow.name,
+            "query": workflow.query,
+            "type": workflow.type,
+            "report_type": workflow.report_type,
+            "status": workflow.status,
+            "workflow_definition": workflow.workflow_definition,
+            "created_at": workflow.created_at.isoformat()
+        }
+    }
+
+@app.put("/api/v1/workflows/{workflow_id}")
+async def update_workflow(
+    workflow_id: str,
+    update_data: WorkflowUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update workflow (Rename or Pin/Unpin)"""
+    workflow = db.query(Workflow).filter(
+        Workflow.id == workflow_id,
+        Workflow.company_id == current_user.company_id
+    ).first()
+
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    if update_data.name is not None:
+        workflow.name = update_data.name
+        
+    if update_data.is_pinned is not None:
+        workflow.is_pinned = update_data.is_pinned
+    
+    db.commit()
+    return {"status": "success", "message": "Workflow updated"}
+
+@app.delete("/api/v1/workflows/{workflow_id}")
+async def delete_workflow(
+    workflow_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a workflow from history"""
+    workflow = db.query(Workflow).filter(
+        Workflow.id == workflow_id,
+        Workflow.company_id == current_user.company_id
+    ).first()
+
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    db.delete(workflow)
+    db.commit()
+    return {"status": "success", "message": "Workflow deleted"}
+
+@app.get("/api/v1/documents/{document_id}")
+async def get_document_details(
+    document_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Fetch detailed parsed data for a specific document"""
+    doc = db.query(Document).filter(
+        Document.id == document_id,
+        Document.company_id == current_user.company_id
+    ).first()
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    return {
+        "status": "success",
+        "document": {
+            "id": doc.id,
+            "file_name": doc.file_name,
+            "file_type": doc.file_type,
+            "file_size": doc.file_size,
+            "document_type": doc.document_type,
+            "document_number": doc.document_number,
+            "document_date": doc.document_date.isoformat() if doc.document_date else None,
+            "category": doc.category,
+            "status": doc.status,
+            "confidence_score": float(doc.confidence_score) if doc.confidence_score else None,
+            "vendor_name": doc.vendor_name,
+            "customer_name": doc.customer_name,
+            "grand_total": float(doc.grand_total) if doc.grand_total is not None else 0.0,
+            "tax_total": float(doc.tax_total) if doc.tax_total is not None else 0.0,
+            "paid_amount": float(doc.paid_amount) if doc.paid_amount is not None else 0.0,
+            "outstanding": float(doc.outstanding) if doc.outstanding is not None else 0.0,
+            "uploaded_at": doc.uploaded_at.isoformat() if doc.uploaded_at else None,
+            "canonical_data": doc.canonical_data,
+            "docling_parsed_data": doc.docling_parsed_data
+        }
     }
 
 @app.get("/api/v1/reports/download/{filename}")
